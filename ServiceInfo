@@ -1,0 +1,43 @@
+import java.time.LocalDateTime;
+
+public class ServiceInfo {
+    private int serviceId;
+    private String serviceType;
+    private double serviceCost;
+    private LocalDateTime serviceDate;
+    private String estimatedCompletionTime;
+
+    public ServiceInfo(int serviceId, String serviceType, double serviceCost, LocalDateTime serviceDate, String estimatedCompletionTime) {
+        this.serviceId = serviceId;
+        this.serviceType = serviceType;
+        this.serviceCost = serviceCost;
+        this.serviceDate = serviceDate;
+        this.estimatedCompletionTime = estimatedCompletionTime;
+    }
+
+    public int getServiceId() {
+        return serviceId;
+    }
+
+    public String getServiceType() {
+        return serviceType;
+    }
+
+    public double getServiceCost() {
+        return serviceCost;
+    }
+
+    public LocalDateTime getServiceDate() {
+        return serviceDate;
+    }
+
+    public String getEstimatedCompletionTime() {
+        return estimatedCompletionTime;
+    }
+
+    @Override
+    public String toString() {
+        return "Service ID: " + serviceId + ", Type: " + serviceType + ", Cost: " + serviceCost +
+                ", Date: " + serviceDate + ", Estimated Time: " + estimatedCompletionTime;
+    }
+}
