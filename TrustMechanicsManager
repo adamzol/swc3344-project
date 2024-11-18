@@ -1,0 +1,52 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.LinkedList;
+import java.util.List;
+
+public class TrustMechanicsManager {
+    private List<CustomerInfo> customerList;
+
+    public TrustMechanicsManager() {
+        customerList = new LinkedList<>();
+    }
+
+    public void loadCustomerData(String filePath) throws IOException {
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(",");
+                int customerId = Integer.parseInt(parts[0]);
+                String customerName = parts[1];
+                String vehiclePlate = parts[2];
+                int serviceCount = Integer.parseInt(parts[3]);
+
+                CustomerInfo customer = new CustomerInfo(customerId, customerName, vehiclePlate);
+
+                for (int i = 0; i < serviceCount; i++) {
+                    String serviceLine = br.readLine();
+                    String[] serviceParts = serviceLine.split(",");
+                    int serviceId = Integer.parseInt(serviceParts[0]);
+                    String serviceType = serviceParts[1];
+                    double serviceCost = Double.parseDouble(serviceParts[2]);
+                    String estimatedTime = serviceParts[3];
+                    LocalDateTime serviceDate = LocalDateTime.parse(serviceParts[4]);
+
+                    ServiceInfo service = new ServiceInfo(serviceId, serviceType, serviceCost, serviceDate, estimatedTime);
+                    customer.addService(service);
+                }
+
+                customerList.add(customer);
+            }
+        }
+    }
+
+    public List<CustomerInfo> getCustomerList() {
+        return customerList;
+    }
+
+    public void addCustomer(CustomerInfo customer) {
+        customerList.add(customer);
+    }
+}
