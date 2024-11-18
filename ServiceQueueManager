@@ -1,0 +1,97 @@
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Stack;
+import javax.swing.JTextArea;
+
+
+public class ServiceQueueManager {
+    private Queue<CustomerInfo> serviceLane1;
+    private Queue<CustomerInfo> serviceLane2;
+    private Queue<CustomerInfo> serviceLane3;
+    private Stack<CustomerInfo> completeStack;
+    private boolean toggleLane;
+    private JTextArea displayArea; // Reference to GUI display area
+
+    public ServiceQueueManager(JTextArea displayArea) {
+        serviceLane1 = new LinkedList<>();
+        serviceLane2 = new LinkedList<>();
+        serviceLane3 = new LinkedList<>();
+        completeStack = new Stack<>();
+        toggleLane = true;
+        this.displayArea = displayArea; // Initialize displayArea
+    }
+
+    public void addCustomerToQueue(CustomerInfo customer) {
+        int totalServices = customer.getServices().size();
+
+        if (totalServices <= 3) {
+            if (toggleLane) {
+                serviceLane1.add(customer);
+            } else {
+                serviceLane2.add(customer);
+            }
+            toggleLane = !toggleLane;
+        } else {
+            serviceLane3.add(customer);
+        }
+        displayArea.append("Customer " + customer.getCustomerName() + " added to the appropriate lane.\n");
+    }
+
+    public void processServices() {
+        processLane(serviceLane1, "Service Lane 1");
+        processLane(serviceLane2, "Service Lane 2");
+        processLane(serviceLane3, "Service Lane 3");
+    }
+
+    private void processLane(Queue<CustomerInfo> lane, String laneName) {
+        int count = 0;
+        while (!lane.isEmpty() && count < 5) {
+            CustomerInfo customer = lane.poll();
+            completeStack.push(customer);
+
+            displayArea.append("Processed from " + laneName + ":\n");
+            displayArea.append("  - Customer: " + customer.getCustomerName() + "\n");
+            displayArea.append("  - Vehicle Plate: " + customer.getVehiclePlateNumber() + "\n");
+            displayArea.append("  - Total Service Cost: " + customer.calculateTotalCost() + "\n");
+            count++;
+        }
+        if (count == 0) {
+            displayArea.append(laneName + " has no customers to process.\n");
+        }
+    }
+
+    public void displayCustomersInLane(Queue<CustomerInfo> lane, String laneName) {
+        displayArea.append("Customers in " + laneName + ":\n");
+        if (lane.isEmpty()) {
+            displayArea.append("  - No customers in this lane.\n");
+        } else {
+            for (CustomerInfo customer : lane) {
+                displayArea.append("  - Customer: " + customer.getCustomerName() + ", Vehicle: " + customer.getVehiclePlateNumber() + "\n");
+            }
+        }
+    }
+
+    public void resetLanesAndStack() {
+        serviceLane1.clear();
+        serviceLane2.clear();
+        serviceLane3.clear();
+        completeStack.clear();
+        displayArea.append("All lanes and completed transactions have been cleared.\n");
+    }
+
+    public Queue<CustomerInfo> getServiceLane1() {
+        return serviceLane1;
+    }
+
+    public Queue<CustomerInfo> getServiceLane2() {
+        return serviceLane2;
+    }
+
+    public Queue<CustomerInfo> getServiceLane3() {
+        return serviceLane3;
+    }
+
+    public Stack<CustomerInfo> getCompletedTransactions() {
+        return completeStack;
+    }
+}
