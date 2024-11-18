@@ -1,0 +1,210 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.time.LocalDateTime;
+
+public class TrustMechanicsApp extends JFrame {
+    private TrustMechanicsManager manager;
+    private ServiceQueueManager queueManager;
+    private JTextArea displayArea;
+
+    public TrustMechanicsApp() {
+        manager = new TrustMechanicsManager();
+        displayArea = new JTextArea();
+        queueManager = new ServiceQueueManager(displayArea);
+
+        setTitle("Trust Mechanics Service Center");
+        setSize(1000, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        displayArea.setEditable(false);
+        add(new JScrollPane(displayArea), BorderLayout.CENTER);
+
+        JPanel controlPanel = new JPanel();
+        controlPanel.setLayout(new GridLayout(1, 8));
+        addButtonsToControlPanel(controlPanel);
+
+        add(controlPanel, BorderLayout.SOUTH);
+    }
+
+    private void addButtonsToControlPanel(JPanel controlPanel) {
+        JButton loadCustomersButton = new JButton("Load Customers");
+        loadCustomersButton.addActionListener(e -> loadCustomers());
+        controlPanel.add(loadCustomersButton);
+
+        JButton processQueueButton = new JButton("Process Queue");
+        processQueueButton.addActionListener(e -> processQueue());
+        controlPanel.add(processQueueButton);
+
+        JButton showLaneStatusButton = new JButton("Show Lane Status");
+        showLaneStatusButton.addActionListener(e -> showLaneStatus());
+        controlPanel.add(showLaneStatusButton);
+
+        JButton addCustomerButton = new JButton("Add Customer");
+        addCustomerButton.addActionListener(e -> addCustomer());
+        controlPanel.add(addCustomerButton);
+
+        JButton displayCustomerButton = new JButton("Display Customer by ID");
+        displayCustomerButton.addActionListener(e -> displayCustomerById());
+        controlPanel.add(displayCustomerButton);
+
+        JButton displayLaneButton = new JButton("Display Lane Customers");
+        displayLaneButton.addActionListener(e -> displayLaneCustomers());
+        controlPanel.add(displayLaneButton);
+
+        JButton resetButton = new JButton("Reset");
+        resetButton.addActionListener(e -> resetSystem());
+        controlPanel.add(resetButton);
+    }
+
+    private void loadCustomers() {
+        try {
+            String filePath = "/Users/adam/Library/Mobile Documents/com~apple~TextEdit/Documents/service_request.txt";
+            manager.loadCustomerData(filePath);
+            for (CustomerInfo customer : manager.getCustomerList()) {
+                queueManager.addCustomerToQueue(customer);
+                displayArea.append("Customer loaded: " + customer.getCustomerName() + "\n");
+                displayArea.append("  - Vehicle Plate: " + customer.getVehiclePlateNumber() + "\n");
+                displayArea.append("  - Services:\n");
+                for (ServiceInfo service : customer.getServices()) {
+                    displayArea.append("      - " + service + "\n");
+                }
+                displayArea.append("  - Total Service Cost: " + customer.calculateTotalCost() + "\n");
+                displayArea.append("----\n");
+            }
+            displayArea.append("All customers loaded successfully from file: " + filePath + "\n");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "Failed to load customers. Check file format/path.", "Error", JOptionPane.ERROR_MESSAGE);
+            e.printStackTrace();
+        }
+    }
+
+    private void processQueue() {
+        queueManager.processServices();
+        displayArea.append("Queues processed.\n");
+    }
+
+    private void showLaneStatus() {
+        displayArea.append("Service Lane 1: " + queueManager.getServiceLane1().size() + " customers remaining.\n");
+        displayArea.append("Service Lane 2: " + queueManager.getServiceLane2().size() + " customers remaining.\n");
+        displayArea.append("Service Lane 3: " + queueManager.getServiceLane3().size() + " customers remaining.\n");
+    }
+
+    private void addCustomer() {
+        JTextField customerIdField = new JTextField(5);
+        JTextField customerNameField = new JTextField(10);
+        JTextField vehiclePlateField = new JTextField(10);
+        JTextField serviceCountField = new JTextField(5);
+
+        JPanel customerPanel = new JPanel(new GridLayout(0, 2));
+        customerPanel.add(new JLabel("Customer ID:"));
+        customerPanel.add(customerIdField);
+        customerPanel.add(new JLabel("Customer Name:"));
+        customerPanel.add(customerNameField);
+        customerPanel.add(new JLabel("Vehicle Plate:"));
+        customerPanel.add(vehiclePlateField);
+        customerPanel.add(new JLabel("Number of Services:"));
+        customerPanel.add(serviceCountField);
+
+        int result = JOptionPane.showConfirmDialog(this, customerPanel, "Add New Customer", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                int customerId = Integer.parseInt(customerIdField.getText());
+                String customerName = customerNameField.getText();
+                String vehiclePlate = vehiclePlateField.getText();
+                int serviceCount = Integer.parseInt(serviceCountField.getText());
+
+                CustomerInfo customer = new CustomerInfo(customerId, customerName, vehiclePlate);
+
+                for (int i = 0; i < serviceCount; i++) {
+                    JTextField serviceIdField = new JTextField(5);
+                    JTextField serviceTypeField = new JTextField(10);
+                    JTextField serviceCostField = new JTextField(5);
+                    JTextField serviceTimeField = new JTextField(10);
+                    JTextField serviceDateField = new JTextField(15);
+
+                    JPanel servicePanel = new JPanel(new GridLayout(0, 2));
+                    servicePanel.add(new JLabel("Service ID:"));
+                    servicePanel.add(serviceIdField);
+                    servicePanel.add(new JLabel("Service Type:"));
+                    servicePanel.add(serviceTypeField);
+                    servicePanel.add(new JLabel("Service Cost:"));
+                    servicePanel.add(serviceCostField);
+                    servicePanel.add(new JLabel("Estimated Time:"));
+                    servicePanel.add(serviceTimeField);
+                    servicePanel.add(new JLabel("Service Date (YYYY-MM-DDTHH:mm):"));
+                    servicePanel.add(serviceDateField);
+
+                    int serviceResult = JOptionPane.showConfirmDialog(this, servicePanel, "Add Service #" + (i + 1), JOptionPane.OK_CANCEL_OPTION);
+                    if (serviceResult == JOptionPane.OK_OPTION) {
+                        int serviceId = Integer.parseInt(serviceIdField.getText());
+                        String serviceType = serviceTypeField.getText();
+                        double serviceCost = Double.parseDouble(serviceCostField.getText());
+                        String estimatedTime = serviceTimeField.getText();
+                        LocalDateTime serviceDate = LocalDateTime.parse(serviceDateField.getText());
+
+                        ServiceInfo service = new ServiceInfo(serviceId, serviceType, serviceCost, serviceDate, estimatedTime);
+                        customer.addService(service);
+                    }
+                }
+
+                manager.addCustomer(customer); // Add to customer list
+                queueManager.addCustomerToQueue(customer); // Assign to appropriate lane
+                displayArea.append("Customer " + customerName + " added successfully.\n");
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Invalid input. Please try again.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void displayCustomerById() {
+        String customerIdStr = JOptionPane.showInputDialog(this, "Enter Customer ID to display details:");
+        try {
+            int customerId = Integer.parseInt(customerIdStr);
+
+            // Search for the customer in the manager's customer list
+            CustomerInfo customer = manager.getCustomerList().stream()
+                    .filter(c -> c.getCustomerId() == customerId)
+                    .findFirst()
+                    .orElse(null);
+
+            if (customer != null) {
+                displayArea.append("Customer Details:\n");
+                displayArea.append("Name: " + customer.getCustomerName() + "\n");
+                displayArea.append("Vehicle Plate: " + customer.getVehiclePlateNumber() + "\n");
+                displayArea.append("Services:\n");
+                for (ServiceInfo service : customer.getServices()) {
+                    displayArea.append("  - " + service + "\n");
+                }
+                displayArea.append("Total Service Cost: " + customer.calculateTotalCost() + "\n");
+            } else {
+                displayArea.append("Customer with ID " + customerId + " not found.\n");
+            }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Invalid input. Please enter a valid customer ID.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void displayLaneCustomers() {
+        int laneNumber = Integer.parseInt(JOptionPane.showInputDialog(this, "Enter Lane Number (1, 2, or 3):"));
+        switch (laneNumber) {
+            case 1:
+                queueManager.displayCustomersInLane(queueManager.getServiceLane1(), "Service Lane 1");
+                break;
+            case 2:
+                queueManager.displayCustomersInLane(queueManager.getServiceLane2(), "Service Lane 2");
+                break;
+            case 3:
+                queueManager.displayCustomersInLane(queueManager.getServiceLane3(), "Service Lane 3");
+                break;
+            default:
+                JOptionPane.showMessageDialog(this, "Invalid lane number!", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void resetSystem() {
+        queueManager.resetLanesAndStack();
+        displayArea.append("System has been reset.\n");
+    }
+}
